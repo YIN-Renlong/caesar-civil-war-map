@@ -83,3 +83,29 @@ npm run dev
 - **Primary Historical Source:** Westall, R. (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Leiden: Brill.
 - **Geospatial Data Repository:** Heath, S. (ISAW/NYU). *Roman Maps*. GitHub. Available: [https://github.com/sfsheath/roman-maps](https://github.com/sfsheath/roman-map)
 - **Basemap Provider:** Esri World Shaded Relief.
+
+## 7. Development Context & Tasks
+
+*This section provides technical context for contributors with future iterations.*
+
+### 7.1 Current Logic State
+
+- **Logic:** The turf.intersect logic is fully functional.
+- **Data Source A (Mask):** roman_empire_bc_60_extent.geojson (Working).
+- **Data Source B (Rough Input):** roughProvinces object inside App.svelte (Needs refinement).
+
+### 7.2 Priority Task: Coordinate Refinement
+
+The current roughProvinces polygons are defined as simple rectangles. This causes historical inaccuracies (e.g., the border between Gaul and Italy is a straight vertical line rather than following the Alps).
+
+**Required Action:**
+Without altering the "Snagging" logic, the coordinates in the roughProvinces object need to be redefined to approximate the historical borders more closely. The intersection algorithm will handle the coastlines, so the focus should be on the **internal borders**:
+
+- **Gaul:** Define a polygon that stops roughly at the Pyrenees (West), the Alps (East), and the Rhine (North).
+- **Hispania:** Define a polygon covering the Iberian peninsula, meeting Gaul at the Pyrenees.
+- **Italia:** Define a polygon that includes Sicily and Sardinia but stops at the Alps (Cisalpine Gaul border).
+- **Greece/Macedonia:** Define a polygon covering the Greek peninsula and Macedonia, distinct from Asia.
+- **Asia:** Define a polygon covering modern Turkey (Asia Minor).
+- **Africa:** Define a polygon covering the North African coast (modern Tunisia/Libya coast).
+
+*Refining these coordinates will immediately improve the visual accuracy of the resulting clipped map.*
