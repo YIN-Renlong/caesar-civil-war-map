@@ -76,6 +76,20 @@ npm install
 
 # 3. Start the development server
 npm run dev
+
+# --- SAVING AND DEPLOYING CHANGES ---
+
+# 4. Stage all changes for commit
+git add .    
+
+# 5. Save changes locally with a descriptive message
+git commit -m "Update README.md"
+
+# 6. Upload local commits to the remote repository
+git push   
+
+# 7. Build the project and deploy it to the hosting service
+npm run deploy  
 ```
 
 ## 6. Credits & Bibliography
