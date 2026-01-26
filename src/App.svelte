@@ -1,13 +1,11 @@
 <script>
-  // Range: -50 (50 BC) to -44 (44 BC)
   let year = -50; 
   
-  // --- HISTORICAL DATASET ---
   const historicalData = [
     {
       year: -50,
       title: "50 BC: The Standoff",
-      desc: "Caesar is in Gaul. The Senate (Pompey) controls Italy, Spain, and the East. Egypt is neutral.",
+      desc: "Caesar is in Gaul. The Senate (Pompey) controls Italy, Spain, and the East.",
       factions: {
         gallia: "caesar",
         hispania: "senate",
@@ -21,11 +19,11 @@
     {
       year: -49,
       title: "49 BC: Crossing the Rubicon",
-      desc: "Caesar invades Italy (Jan) and Spain (Aug). Pompey flees to Greece.",
+      desc: "Caesar takes Italy (Jan) and Spain (Aug). Pompey flees to Greece.",
       factions: {
         gallia: "caesar",
-        hispania: "caesar", // CHANGED: Caesar takes Spain
-        italia: "caesar",   // CHANGED: Caesar takes Italy
+        hispania: "caesar", // RED
+        italia: "caesar",   // RED
         graecia: "senate",
         asia: "senate",
         africa: "senate",
@@ -40,47 +38,47 @@
         gallia: "caesar",
         hispania: "caesar",
         italia: "caesar",
-        graecia: "caesar",  // CHANGED: Caesar wins Greece
+        graecia: "caesar",  // RED
         asia: "senate",
         africa: "senate",
-        aegyptus: "contest" // CHANGED: Egypt in Chaos
+        aegyptus: "contest" // ORANGE
       }
     },
     {
       year: -47,
       title: "47 BC: Veni Vidi Vici",
-      desc: "Caesar secures the East and Egypt. The Senate regroups in Africa.",
+      desc: "Caesar secures the East. Cleopatra installed in Egypt.",
       factions: {
         gallia: "caesar",
         hispania: "caesar",
         italia: "caesar",
         graecia: "caesar",
-        asia: "caesar",     // CHANGED: Caesar takes Asia
+        asia: "caesar",     // RED
         africa: "senate",
-        aegyptus: "client"  // CHANGED: Cleopatra rules
+        aegyptus: "client"  // PURPLE
       }
     },
     {
       year: -46,
       title: "46 BC: Thapsus",
-      desc: "Caesar conquers Africa. Pompeian resistance crumbles.",
+      desc: "Caesar conquers Africa. Cato commits suicide.",
       factions: {
         gallia: "caesar",
-        hispania: "senate", // CHANGED: Rebellion in Spain
+        hispania: "senate", // BLUE (Revolt)
         italia: "caesar",
         graecia: "caesar",
         asia: "caesar",
-        africa: "caesar",   // CHANGED: Caesar takes Africa
+        africa: "caesar",   // RED
         aegyptus: "client"
       }
     },
     {
       year: -45,
       title: "45 BC: Munda",
-      desc: "The final battle in Spain. Caesar becomes sole Dictator.",
+      desc: "The final battle in Spain. The Civil War ends.",
       factions: {
         gallia: "caesar",
-        hispania: "caesar", // CHANGED: Rebellion crushed
+        hispania: "caesar", // RED
         italia: "caesar",
         graecia: "caesar",
         asia: "caesar",
@@ -91,11 +89,11 @@
     {
       year: -44,
       title: "44 BC: Assassination",
-      desc: "Caesar is killed. The Republic falls into chaos.",
+      desc: "Caesar is killed on the Ides of March.",
       factions: {
         gallia: "caesar",
         hispania: "caesar",
-        italia: "neutral", // CHANGED: Chaos in Rome
+        italia: "neutral", // GREY
         graecia: "neutral",
         asia: "neutral",
         africa: "caesar",
@@ -104,42 +102,42 @@
     }
   ];
 
-  // --- LOGIC FIX: ROBUST LOOKUP ---
-  // If we can't find an exact year match, find the closest PREVIOUS year.
-  // This prevents the map from breaking if the slider is slightly off.
-  $: currentData = historicalData
-    .filter(d => d.year <= year) // Get all data up to current year
-    .pop() || historicalData[0]; // Take the last one (most recent)
+  // Logic: Ensure we always have data
+  $: currentData = historicalData.find(d => d.year === year) || historicalData[0];
   
-  // --- COLORS ---
   const colors = {
-    caesar: "#ef4444",  // Bright Red
-    senate: "#1e3a8a",  // Dark Blue
-    neutral: "#d4d4d8", // Grey
-    contest: "#f59e0b", // Orange
-    client:  "#701a75"  // Purple
+    caesar: "#D92828",  // Bright Red
+    senate: "#1D3557",  // Deep Navy Blue
+    neutral: "#9CA3AF", // Grey
+    contest: "#F59E0B", // Orange
+    client:  "#7C3AED"  // Purple
   };
-
-  function getFill(provinceId) {
-    const faction = currentData.factions[provinceId];
-    return colors[faction] || "#cccccc";
-  }
 </script>
 
 <main>
   <div class="layout">
-    <!-- MAP AREA -->
     <div class="map-container">
+      
+      <!-- 
+        THE KEY BLOCK: 
+        This tells Svelte: "Whenever 'year' changes, destroy and recreate the map."
+        This forces the colors to update, 100% guaranteed.
+      -->
+      {#key year}
       <svg viewBox="0 0 1000 600" class="interactive-map">
-        <!-- Ocean -->
-        <rect width="1000" height="600" fill="#93c5fd" />
+        <!-- Sea -->
+        <rect width="1000" height="600" fill="#A8D0E6" />
 
-        <!-- NOTE: We use style="fill: ..." to force the color update -->
-        
+        <!-- 
+           DIRECT BINDING: 
+           fill={colors[currentData.factions.provinceName]}
+           We removed the helper function. This connects the data directly to the visual.
+        -->
+
         <!-- SPAIN -->
         <path 
           d="M 50,350 L 180,330 L 220,400 L 150,480 L 80,450 Z" 
-          style="fill: {getFill('hispania')}" 
+          fill={colors[currentData.factions.hispania]} 
           class="province"
         />
         <text x="110" y="410" class="label">HISPANIA</text>
@@ -147,7 +145,7 @@
         <!-- GAUL -->
         <path 
           d="M 180,330 L 220,180 L 380,160 L 400,280 L 320,320 L 220,400 Z" 
-          style="fill: {getFill('gallia')}" 
+          fill={colors[currentData.factions.gallia]} 
           class="province"
         />
         <text x="280" y="260" class="label">GALLIA</text>
@@ -155,7 +153,7 @@
         <!-- ITALY -->
         <path 
           d="M 320,320 L 400,280 L 450,280 L 520,380 L 480,450 L 420,350 Z" 
-          style="fill: {getFill('italia')}" 
+          fill={colors[currentData.factions.italia]} 
           class="province"
         />
         <text x="440" y="340" class="label">ITALIA</text>
@@ -163,7 +161,7 @@
         <!-- GREECE -->
         <path 
           d="M 500,300 L 600,290 L 630,400 L 520,430 L 520,380 Z" 
-          style="fill: {getFill('graecia')}" 
+          fill={colors[currentData.factions.graecia]} 
           class="province"
         />
         <text x="560" y="360" class="label">GRAECIA</text>
@@ -171,7 +169,7 @@
         <!-- ASIA -->
         <path 
           d="M 630,290 L 850,280 L 870,400 L 660,420 L 630,400 Z" 
-          style="fill: {getFill('asia')}" 
+          fill={colors[currentData.factions.asia]} 
           class="province"
         />
         <text x="750" y="350" class="label">ASIA</text>
@@ -179,7 +177,7 @@
         <!-- AFRICA -->
         <path 
           d="M 180,500 L 550,480 L 550,600 L 180,600 Z" 
-          style="fill: {getFill('africa')}" 
+          fill={colors[currentData.factions.africa]} 
           class="province"
         />
         <text x="350" y="550" class="label">AFRICA</text>
@@ -187,11 +185,12 @@
         <!-- EGYPT -->
         <path 
           d="M 600,450 L 870,450 L 870,600 L 600,600 Z" 
-          style="fill: {getFill('aegyptus')}" 
+          fill={colors[currentData.factions.aegyptus]} 
           class="province"
         />
         <text x="730" y="520" class="label">AEGYPTUS</text>
       </svg>
+      {/key}
       
       <!-- CONTROLS -->
       <div class="timeline-area">
@@ -213,69 +212,55 @@
     <div class="info-panel">
       <div class="header">
         <h1>CAESAR'S CIVIL WAR</h1>
-        <div class="subtitle">Data extracted from Wikipedia</div>
       </div>
       
       <div class="content">
         <h2 class="year-title">{currentData.title}</h2>
         <p>{currentData.desc}</p>
         
-        <!-- DEBUGGER: If this text changes, the logic is working -->
-        <div class="debug-box">
-          <strong>Debug Status:</strong><br>
-          Italy Owner: {currentData.factions.italia}
-        </div>
-
         <div class="legend">
           <h3>Factions</h3>
-          <div class="legend-item"><span style="background:#ef4444"></span> Caesar (Red)</div>
-          <div class="legend-item"><span style="background:#1e3a8a"></span> Senate/Pompey (Blue)</div>
-          <div class="legend-item"><span style="background:#701a75"></span> Client (Purple)</div>
-          <div class="legend-item"><span style="background:#f59e0b"></span> Contested (Orange)</div>
-          <div class="legend-item"><span style="background:#d4d4d8"></span> Neutral (Grey)</div>
+          <div class="legend-item"><span style="background:{colors.caesar}"></span> Caesar</div>
+          <div class="legend-item"><span style="background:{colors.senate}"></span> Senate / Pompey</div>
+          <div class="legend-item"><span style="background:{colors.client}"></span> Client Kingdom</div>
+          <div class="legend-item"><span style="background:{colors.contest}"></span> Contested</div>
+          <div class="legend-item"><span style="background:{colors.neutral}"></span> Neutral</div>
         </div>
       </div>
-      
-      <div class="footer">
-         Interactive Map Prototype
+
+      <div class="debug-text">
+        Debug Check: Italy is {currentData.factions.italia}
       </div>
     </div>
   </div>
 </main>
 
 <style>
-  :global(body) { margin: 0; padding: 0; font-family: 'Helvetica Neue', sans-serif; background-color: #f3f4f6; overflow: hidden; }
-  
+  :global(body) { margin: 0; padding: 0; font-family: 'Georgia', serif; background-color: #f3f4f6; overflow: hidden; }
   .layout { display: flex; height: 100vh; width: 100vw; }
-  
-  .map-container { flex: 3; position: relative; background: #93c5fd; display: flex; flex-direction: column; border-right: 5px solid #333; }
+  .map-container { flex: 3; position: relative; background: #A8D0E6; display: flex; flex-direction: column; border-right: 5px solid #333; }
   .interactive-map { width: 100%; height: 85%; }
   
+  /* Removed CSS transitions to ensure instant color snap */
   .province {
     stroke: #ffffff;
     stroke-width: 2px;
-    transition: fill 0.5s ease; /* Animation for color change */
     cursor: pointer;
   }
   .province:hover { opacity: 0.8; stroke-width: 4px; }
-
-  .label { fill: white; font-weight: 900; pointer-events: none; text-shadow: 0px 0px 5px rgba(0,0,0,0.5); text-anchor: middle; }
-
+  
+  .label { fill: white; font-family: sans-serif; font-weight: 900; pointer-events: none; text-shadow: 0px 0px 5px rgba(0,0,0,0.5); text-anchor: middle; }
   .timeline-area { background: #1f2937; height: 15%; padding: 0 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
-  input[type=range] { width: 80%; accent-color: #ef4444; cursor: pointer; margin: 10px 0; }
+  input[type=range] { width: 80%; accent-color: #D92828; cursor: pointer; margin: 10px 0; }
   .year-display { font-size: 2.5rem; font-weight: bold; color: #fca5a5; font-family: monospace; }
   .ticks { display: flex; justify-content: space-between; width: 80%; color: #9ca3af; }
-
-  .info-panel { flex: 1; min-width: 320px; background: #fdfbf7; padding: 30px; display: flex; flex-direction: column; overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
+  .info-panel { flex: 1; min-width: 300px; background: #fdfbf7; padding: 30px; display: flex; flex-direction: column; overflow-y: auto; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
   .header h1 { color: #991b1b; margin: 0; border-bottom: 3px solid #991b1b; padding-bottom: 10px; }
   .content { margin-top: 20px; flex-grow: 1; }
   .year-title { color: #1f2937; font-size: 1.5rem; }
-  
-  .debug-box { background: #eee; padding: 10px; font-family: monospace; margin: 10px 0; border: 1px dashed #999; font-size: 0.8rem; }
-
   .legend { margin-top: 20px; background: #e5e7eb; padding: 15px; border-radius: 6px; }
   .legend-item { display: flex; align-items: center; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
   .legend-item span { display: block; width: 20px; height: 20px; margin-right: 10px; border: 1px solid #999; }
-  
+  .debug-text { margin-top: 20px; font-family: monospace; font-size: 0.8rem; color: #999; border-top: 1px solid #ddd; padding-top: 10px;}
   @media (max-width: 900px) { .layout { flex-direction: column; overflow: auto; } .map-container { height: 50vh; } }
 </style>
