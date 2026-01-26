@@ -1,5 +1,7 @@
 # Spatiotemporal Visualization of Caesar's Civil War (49–45 BCE)
 
+![main](img/main.png)
+
 ![Status](https://img.shields.io/badge/Status-Prototype%20v0.9-orange)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 ![Tech](https://img.shields.io/badge/Built%20With-Svelte%20%7C%20Leaflet%20%7C%20Turf.js-green)
