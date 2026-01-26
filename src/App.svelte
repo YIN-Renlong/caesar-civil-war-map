@@ -7,7 +7,7 @@
   let map;
   let geoJsonLayer; // This will hold our province shapes
 
-  // --- 1. HISTORICAL DATA ---
+  // --- 1. HISTORICAL DATA (Unchanged) ---
   const historicalData = [
     { year: -50, title: "50 BC: The Standoff", desc: "Caesar is in Gaul. The Senate (Pompey) controls Italy, Spain, and the East.", factions: { Gaul: "caesar", Spain: "senate", Italy: "senate", Greece: "senate", Asia: "senate", Africa: "senate" } },
     { year: -49, title: "49 BC: Crossing the Rubicon", desc: "Caesar invades Italy (Jan) and Spain (Aug). Pompey flees to Greece.", factions: { Gaul: "caesar", Spain: "caesar", Italy: "caesar", Greece: "senate", Asia: "senate", Africa: "senate" } },
@@ -23,22 +23,42 @@
     senate: "#203a43",
   };
 
-  // --- 2. GEOJSON SHAPES FOR PROVINCES ---
-  // In a final project, this would be loaded from an external file.
-  // These coordinates are simplified but represent the correct geographic areas.
-  const provinceGeoJSON = {
-    "type": "FeatureCollection",
-    "features": [
-      { "type": "Feature", "properties": { "name": "Gaul" }, "geometry": { "type": "Polygon", "coordinates": [[[-4.6, 48.3], [1.7, 50.9], [7.5, 49.5], [7.0, 43.6], [3.1, 42.4], [-1.8, 43.3], [-4.6, 48.3]]] } },
-      { "type": "Feature", "properties": { "name": "Spain" }, "geometry": { "type": "Polygon", "coordinates": [[[-9.3, 42.9], [-9.0, 36.9], [-2.2, 36.6], [3.2, 42.2], [-1.8, 43.3], [-9.3, 42.9]]] } },
-      { "type": "Feature", "properties": { "name": "Italy" }, "geometry": { "type": "Polygon", "coordinates": [[[7.5, 43.8], [12.4, 45.5], [13.8, 45.6], [12.6, 42.5], [14.5, 40.8], [18.5, 40.1], [15.6, 37.9], [13.6, 41.2], [10.1, 43.0], [8.3, 44.2], [7.5, 43.8]]] } },
-      { "type": "Feature", "properties": { "name": "Africa" }, "geometry": { "type": "Polygon", "coordinates": [[[9.5, 37.3], [11.1, 36.8], [15.3, 32.3], [10.0, 30.0], [0.0, 32.0], [0.0, 35.0], [9.5, 37.3]]] } },
-      { "type": "Feature", "properties": { "name": "Greece" }, "geometry": { "type": "Polygon", "coordinates": [[[19.4, 42.2], [20.5, 39.0], [22.3, 36.4], [26.6, 41.2], [23.5, 41.5], [19.4, 42.2]]] } },
-      { "type": "Feature", "properties": { "name": "Asia" }, "geometry": { "type": "Polygon", "coordinates": [[[26.1, 40.1], [27.3, 36.8], [35.4, 36.1],[36.0, 41.5], [29.0, 41.2], [26.1, 40.1]]] } }
-    ]
+  // --- 2. GEOJSON SHAPES FOR PROVINCES (Completely Replaced) ---
+  
+  // --- REMOVED --- The old low-resolution `provinceGeoJSON` object is gone.
+  
+  // +++ ADDED +++
+  // This mapper connects the official province names from the GeoJSON file
+  // to the simplified names we use in our historicalData.
+  const provinceNameMapper = {
+    "GALLIA LUGDUNENSIS": "Gaul",
+    "GALLIA NARBONENSIS": "Gaul",
+    "GALLIA AQUITANIA": "Gaul",
+    "GALLIA BELGICA": "Gaul",
+    "GERMANIA INFERIOR": "Gaul", // Historically part of Gaul at the time
+    "GERMANIA SUPERIOR": "Gaul",
+    "HISPANIA TARRACONENSIS": "Spain",
+    "HISPANIA BAETICA": "Spain",
+    "LUSITANIA": "Spain",
+    "ITALIA": "Italy",
+    "SICILIA": "Italy", // Grouping Sicily with Italy
+    "SARDINIA ET CORSICA": "Italy", // Grouping Sardinia/Corsica with Italy
+    "AFRICA PROCONSULARIS": "Africa",
+    "NUMIDIA": "Africa",
+    "ACHAEA": "Greece",
+    "MACEDONIA": "Greece",
+    "CRETA ET CYRENAICA": "Greece",
+    "ASIA": "Asia",
+    "BITHYNIA ET PONTUS": "Asia",
+    "GALATIA": "Asia",
+    "LYCIA ET PAMPHYLIA": "Asia",
+    "CILICIA": "Asia",
+    // Note: Other provinces like AEGYPTUS, SYRIA etc. exist in the file
+    // but are not in our simplified model. They will render as transparent.
   };
 
-  // --- 3. MAP INITIALIZATION ---
+
+  // --- 3. MAP INITIALIZATION (Modified) ---
   onMount(async () => {
     map = L.map('map-container', {
       center: [42, 15],
@@ -49,41 +69,51 @@
       attributionControl: false
     });
 
-    // HIGH-DEFINITION BASE MAP - This provides the real geography
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri'
     }).addTo(map);
+    
+    // FETCH & DRAW THE 60 BC OUTLINE (Unchanged)
+    const outlineResponse = await fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_empire_bc_60_extent.geojson');
+    const empireOutline = await outlineResponse.json();
+    L.geoJSON(empireOutline, { style: { color: '#000', weight: 2, fill: false, interactive: false } }).addTo(map);
 
-    // FETCH & DRAW THE 60 BC OUTLINE
-    const response = await fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_empire_bc_60_extent.geojson');
-    const empireOutline = await response.json();
-    L.geoJSON(empireOutline, { style: { color: '#000', weight: 2, fill: false } }).addTo(map);
+    // +++ ADDED +++
+    // FETCH HIGH-RESOLUTION PROVINCE DATA
+    const provincesResponse = await fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_provinces_senate_ad_69.geojson');
+    const highResProvinces = await provincesResponse.json();
 
     // DRAW THE INTERACTIVE PROVINCES ON TOP
-    geoJsonLayer = L.geoJSON(provinceGeoJSON, {
+    geoJsonLayer = L.geoJSON(highResProvinces, { // Use the fetched data
       style: getStyle,
     }).addTo(map);
   });
 
-  // --- 4. REACTIVE UPDATE LOGIC ---
+  // --- 4. REACTIVE UPDATE LOGIC (Modified) ---
   function getStyle(feature) {
-    const provinceName = feature.properties.name;
-    const owner = currentData.factions[provinceName];
+    // +++ MODIFIED LOGIC +++
+    // Use the mapper to find the simplified name
+    const officialName = feature.properties.provname;
+    const simpleName = provinceNameMapper[officialName];
+    
+    const owner = currentData.factions[simpleName];
+
     return {
-      fillColor: colors[owner] || 'transparent',
+      fillColor: colors[owner] || 'transparent', // Default to transparent if no owner
       weight: 1,
       color: 'white',
       fillOpacity: 0.65
     };
   }
 
-  // When 'year' changes, this tells Leaflet to re-style the province layer
+  // This reactive block remains the same and will work perfectly.
   $: if (geoJsonLayer && currentData) {
     geoJsonLayer.setStyle(getStyle);
   }
 </script>
 
 <main>
+  <!-- The HTML and CSS structure can remain exactly the same -->
   <div class="layout">
     <div id="map-container"></div>
     <div class="ui-panel">
@@ -105,6 +135,7 @@
 </main>
 
 <style>
+  /* Your CSS can remain exactly the same */
   :global(body) { margin: 0; padding: 0; font-family: 'Georgia', serif; }
   .layout { position: relative; height: 100vh; width: 100vw; }
   #map-container { height: 100%; width: 100%; z-index: 1; }
