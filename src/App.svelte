@@ -2,25 +2,24 @@
   import { onMount } from 'svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
-  // --- IMPORT YOUR NEW CLEAN DATA ---
   import { historicalData } from './historical-data.js';
 
   let map;
-  let geoJsonLayer;
-  let eventIndex = 0; // Controls the slider based on array index
+  let provinceLayer; 
+
+  let eventIndex = 0; 
 
   // --- REACTIVE LOGIC ---
   $: currentData = historicalData[eventIndex];
-  // Convert "YYYY-MM" to a Date object. We append "-15" to pick the middle of the month
-  $: currentDate = new Date(currentData.date + "-15");
 
   const colors = {
-    caesar: "#d90429",
-    senate: "#203a43",
-    Contested: "#fca311", // Orange for contested zones
+    caesar: "#d90429", // Red
+    senate: "#203a43", // Dark Blue
+    Contested: "#fca311", // Orange
     Neutral: "transparent"
   };
 
+  // This maps the specific names in the GeoJSON to your data names
   const provinceNameMapper = {
     "GALLIA LUGDUNENSIS": "Gaul",
     "GALLIA NARBONENSIS": "Gaul",
@@ -28,10 +27,10 @@
     "GALLIA BELGICA": "Gaul",
     "GERMANIA INFERIOR": "Gaul",
     "GERMANIA SUPERIOR": "Gaul",
-    "HISPANIA TARRACONENSIS": "Hispania", // Updated to match your JSON key
+    "HISPANIA TARRACONENSIS": "Hispania",
     "HISPANIA BAETICA": "Hispania",
     "LUSITANIA": "Hispania",
-    "ITALIA": "Italia", // Updated to match your JSON key
+    "ITALIA": "Italia",
     "SICILIA": "Italia",
     "SARDINIA ET CORSICA": "Italia",
     "AFRICA PROCONSULARIS": "Africa",
@@ -44,7 +43,8 @@
     "GALATIA": "Asia",
     "LYCIA ET PAMPHYLIA": "Asia",
     "CILICIA": "Asia",
-    "AEGYPTUS": "Aegyptus" // Added Egypt
+    "AEGYPTUS": "Aegyptus",
+    "CYPRUS": "Asia"
   };
 
   onMount(async () => {
@@ -62,46 +62,64 @@
     }).addTo(map);
     
     try {
+      // WE FETCH BOTH FILES HERE
       const [outlineResponse, provincesResponse] = await Promise.all([
-        fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_empire_bc_60_extent.geojson'),
+        // 1. YOUR LINK (The Outline)
+        fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/refs/heads/master/roman_empire_bc_60_extent.geojson'),
+        // 2. MY LINK (The Shapes to color)
         fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_provinces_senate_ad_69.geojson')
       ]);
 
       const empireOutline = await outlineResponse.json();
       const highResProvinces = await provincesResponse.json();
 
-      L.geoJSON(empireOutline, { style: { color: '#000', weight: 2.5, fill: false, interactive: false } }).addTo(map);
+      // Layer 1: The Black Outline (Non-interactive)
+      L.geoJSON(empireOutline, { 
+        style: { color: '#000', weight: 2.5, fill: false, interactive: false } 
+      }).addTo(map);
       
-      geoJsonLayer = L.geoJSON(highResProvinces, { style: getStyle }).addTo(map);
+      // Layer 2: The Colored Provinces (Interactive)
+      provinceLayer = L.geoJSON(highResProvinces, { style: getStyle }).addTo(map);
 
     } catch (error) {
       console.error("Failed to fetch map data:", error);
+      alert("Error loading map data. Check console.");
     }
   });
 
   function getStyle(feature) {
     const officialName = feature.properties.provname;
     const simpleName = provinceNameMapper[officialName];
-    // Safety check: default to Neutral/Transparent if data is missing
+    
+    // Logic: Look up the owner. If not found, use "Neutral".
     const owner = currentData ? (currentData.factions[simpleName] || "Neutral") : "Neutral";
 
     return {
-      fillColor: colors[owner] || 'transparent',
-      weight: 1.5,
-      color: 'white',
-      fillOpacity: 0.65
+      fillColor: colors[owner],
+      weight: 1,       // Thinner lines for the shapes
+      color: 'white',  // White borders between provinces
+      fillOpacity: 0.6
     };
   }
 
-  $: if (geoJsonLayer && currentData) {
-    geoJsonLayer.setStyle(getStyle);
+  // Update styles when the slider moves
+  $: if (provinceLayer && currentData) {
+    provinceLayer.setStyle(getStyle);
   }
 
-  function formatDate(date) {
-      if (!date || isNaN(date)) return "";
-      const year = Math.abs(date.getFullYear());
-      const month = date.toLocaleString('default', { month: 'long' });
-      return `${month}, ${year} BC`;
+  // FIX FOR THE "2048" DATE BUG
+  function formatDate(dateString) {
+      if (!dateString) return "";
+      // Manually parse "-0048-01" to avoid Browser timezone bugs
+      const parts = dateString.split('-'); // ["", "0048", "01"]
+      const year = parseInt(parts[1]);     // 48
+      const monthNum = parseInt(parts[2]); // 1
+      
+      const dateObj = new Date();
+      dateObj.setMonth(monthNum - 1);
+      const monthName = dateObj.toLocaleString('default', { month: 'long' });
+
+      return `${monthName}, ${year} BC`;
   }
 </script>
 
@@ -110,11 +128,12 @@
     <div id="map-container"></div>
     <div class="ui-panel">
       <h1>CAESAR'S CIVIL WAR</h1>
-      <div class="date-display">{formatDate(currentDate)}</div>
+      <!-- Use the new Date formatter -->
+      <div class="date-display">{formatDate(currentData.date)}</div>
+      
       <h2>{currentData.title}</h2>
       <p>{currentData.key_events}</p>
       
-      <!-- SLIDER CONTROLS THE ARRAY INDEX -->
       <input 
         type="range" 
         min="0" 
