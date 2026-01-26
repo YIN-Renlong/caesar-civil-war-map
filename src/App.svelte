@@ -2,42 +2,51 @@
   import { onMount } from 'svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
+  // --- IMPORT YOUR NEW CLEAN DATA ---
+  import { historicalData } from './historical-data.js';
 
-  let year = -50;
   let map;
   let geoJsonLayer;
+  let eventIndex = 0; // Controls the slider based on array index
 
-  // --- 1. HISTORICAL DATA ---
-  const historicalData = [
-    { year: -50, title: "50 BC: The Standoff", desc: "Caesar is in Gaul. The Senate (Pompey) controls Italy, Spain, and the East.", factions: { Gaul: "caesar", Spain: "senate", Italy: "senate", Greece: "senate", Asia: "senate", Africa: "senate" } },
-    { year: -49, title: "49 BC: Crossing the Rubicon", desc: "Caesar invades Italy (Jan) and Spain (Aug). Pompey flees to Greece.", factions: { Gaul: "caesar", Spain: "caesar", Italy: "caesar", Greece: "senate", Asia: "senate", Africa: "senate" } },
-    { year: -48, title: "48 BC: Pharsalus", desc: "Caesar defeats Pompey in Greece. Pompey is killed in Egypt.", factions: { Gaul: "caesar", Spain: "caesar", Italy: "caesar", Greece: "caesar", Asia: "senate", Africa: "senate" } },
-    { year: -46, title: "46 BC: Thapsus", desc: "Caesar invades Africa, destroying the Senatorial army. Cato commits suicide.", factions: { Gaul: "caesar", Spain: "senate", Italy: "caesar", Greece: "caesar", Africa: "caesar" } },
-    { year: -45, title: "45 BC: Munda", desc: "The final battle in Spain. The Civil War ends.", factions: { Gaul: "caesar", Spain: "caesar", Italy: "caesar", Greece: "caesar", Africa: "caesar" } }
-  ];
-
-  $: currentData = historicalData.find(d => d.year === year) || historicalData[0];
+  // --- REACTIVE LOGIC ---
+  $: currentData = historicalData[eventIndex];
+  // Convert "YYYY-MM" to a Date object. We append "-15" to pick the middle of the month
+  $: currentDate = new Date(currentData.date + "-15");
 
   const colors = {
     caesar: "#d90429",
     senate: "#203a43",
+    Contested: "#fca311", // Orange for contested zones
+    Neutral: "transparent"
   };
 
-  // --- 2. HIGH-RESOLUTION GEOJSON SHAPES ---
-  // These shapes have been traced to look much more realistic.
-  const provinceGeoJSON = {
-    "type": "FeatureCollection",
-    "features": [
-      { "type": "Feature", "properties": { "name": "Gaul" }, "geometry": { "type": "Polygon", "coordinates": [[[-4.6, 48.3], [1.7, 50.9], [5.8, 51.8], [7.5, 49.5], [8.0, 47.0], [7.0, 43.6], [3.1, 42.4], [-1.8, 43.3], [-4.6, 48.3]]] } },
-      { "type": "Feature", "properties": { "name": "Spain" }, "geometry": { "type": "Polygon", "coordinates": [[[-9.3, 42.9], [-9.0, 36.9], [-5.4, 36.0], [-1.8, 36.8], [3.2, 42.2], [-1.8, 43.3], [-9.3, 42.9]]] } },
-      { "type": "Feature", "properties": { "name": "Italy" }, "geometry": { "type": "Polygon", "coordinates": [[[7.5, 43.8], [8.3, 44.2], [10.1, 43.0], [12.4, 45.5], [13.2, 45.6], [13.0, 44.0], [12.6, 42.5], [14.5, 40.8], [18.5, 40.1], [15.6, 37.9], [13.6, 41.2], [11.0, 41.5], [7.5, 43.8]]] } },
-      { "type": "Feature", "properties": { "name": "Africa" }, "geometry": { "type": "Polygon", "coordinates": [[[9.5, 37.3], [11.1, 36.8], [15.3, 32.3], [10.0, 30.0], [0.0, 32.0], [0.0, 35.0], [9.5, 37.3]]] } },
-      { "type": "Feature", "properties": { "name": "Greece" }, "geometry": { "type": "Polygon", "coordinates": [[[19.4, 42.2], [23.5, 41.5], [26.6, 41.2], [26.0, 39.0], [24.0, 36.7], [22.3, 36.4], [20.5, 39.0], [19.4, 42.2]]] } },
-      { "type": "Feature", "properties": { "name": "Asia" }, "geometry": { "type": "Polygon", "coordinates": [[[26.1, 40.1], [29.0, 41.2], [36.0, 41.5], [35.4, 36.1], [27.3, 36.8], [26.1, 40.1]]] } }
-    ]
+  const provinceNameMapper = {
+    "GALLIA LUGDUNENSIS": "Gaul",
+    "GALLIA NARBONENSIS": "Gaul",
+    "GALLIA AQUITANIA": "Gaul",
+    "GALLIA BELGICA": "Gaul",
+    "GERMANIA INFERIOR": "Gaul",
+    "GERMANIA SUPERIOR": "Gaul",
+    "HISPANIA TARRACONENSIS": "Hispania", // Updated to match your JSON key
+    "HISPANIA BAETICA": "Hispania",
+    "LUSITANIA": "Hispania",
+    "ITALIA": "Italia", // Updated to match your JSON key
+    "SICILIA": "Italia",
+    "SARDINIA ET CORSICA": "Italia",
+    "AFRICA PROCONSULARIS": "Africa",
+    "NUMIDIA": "Africa",
+    "ACHAEA": "Greece",
+    "MACEDONIA": "Greece",
+    "CRETA ET CYRENAICA": "Greece",
+    "ASIA": "Asia",
+    "BITHYNIA ET PONTUS": "Asia",
+    "GALATIA": "Asia",
+    "LYCIA ET PAMPHYLIA": "Asia",
+    "CILICIA": "Asia",
+    "AEGYPTUS": "Aegyptus" // Added Egypt
   };
 
-  // --- 3. MAP INITIALIZATION ---
   onMount(async () => {
     map = L.map('map-container', {
       center: [42, 15],
@@ -48,36 +57,51 @@
       attributionControl: false
     });
 
-    // HIGH-DEFINITION BASE MAP
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Tiles &copy; Esri'
     }).addTo(map);
+    
+    try {
+      const [outlineResponse, provincesResponse] = await Promise.all([
+        fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_empire_bc_60_extent.geojson'),
+        fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_provinces_senate_ad_69.geojson')
+      ]);
 
-    // FETCH & DRAW THE 60 BC OUTLINE
-    const response = await fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_empire_bc_60_extent.geojson');
-    const empireOutline = await response.json();
-    L.geoJSON(empireOutline, { style: { color: '#000', weight: 2.5, fill: false, interactive: false } }).addTo(map);
+      const empireOutline = await outlineResponse.json();
+      const highResProvinces = await provincesResponse.json();
 
-    // DRAW THE INTERACTIVE PROVINCES ON TOP
-    geoJsonLayer = L.geoJSON(provinceGeoJSON, {
-      style: getStyle,
-    }).addTo(map);
+      L.geoJSON(empireOutline, { style: { color: '#000', weight: 2.5, fill: false, interactive: false } }).addTo(map);
+      
+      geoJsonLayer = L.geoJSON(highResProvinces, { style: getStyle }).addTo(map);
+
+    } catch (error) {
+      console.error("Failed to fetch map data:", error);
+    }
   });
 
-  // --- 4. REACTIVE UPDATE LOGIC ---
   function getStyle(feature) {
-    const provinceName = feature.properties.name;
-    const owner = currentData.factions[provinceName];
+    const officialName = feature.properties.provname;
+    const simpleName = provinceNameMapper[officialName];
+    // Safety check: default to Neutral/Transparent if data is missing
+    const owner = currentData ? (currentData.factions[simpleName] || "Neutral") : "Neutral";
+
     return {
       fillColor: colors[owner] || 'transparent',
       weight: 1.5,
-      color: 'white', // White border for the colored shapes
-      fillOpacity: 0.6
+      color: 'white',
+      fillOpacity: 0.65
     };
   }
 
   $: if (geoJsonLayer && currentData) {
     geoJsonLayer.setStyle(getStyle);
+  }
+
+  function formatDate(date) {
+      if (!date || isNaN(date)) return "";
+      const year = Math.abs(date.getFullYear());
+      const month = date.toLocaleString('default', { month: 'long' });
+      return `${month}, ${year} BC`;
   }
 </script>
 
@@ -86,17 +110,28 @@
     <div id="map-container"></div>
     <div class="ui-panel">
       <h1>CAESAR'S CIVIL WAR</h1>
-      <div class="date-display">{Math.abs(year)} BC</div>
+      <div class="date-display">{formatDate(currentDate)}</div>
       <h2>{currentData.title}</h2>
-      <p>{currentData.desc}</p>
-      <input type="range" min="-50" max="-45" step="1" bind:value={year} />
+      <p>{currentData.key_events}</p>
+      
+      <!-- SLIDER CONTROLS THE ARRAY INDEX -->
+      <input 
+        type="range" 
+        min="0" 
+        max={historicalData.length - 1} 
+        step="1" 
+        bind:value={eventIndex} 
+      />
+
       <div class="legend">
         <div class="item"><span style="background:{colors.caesar}"></span> Caesar</div>
         <div class="item"><span style="background:{colors.senate}"></span> Senate</div>
+        <div class="item"><span style="background:{colors.Contested}"></span> Contested</div>
       </div>
       <div class="credits">
         Base Map: Esri World Relief <br/>
-        Republic Data: sfsheath/roman-maps (GitHub)
+        Republic Data: sfsheath/roman-maps (GitHub) <br/>
+        Historical Text: "Caesar's Civil War", R. Westall
       </div>
     </div>
   </div>
@@ -119,7 +154,7 @@
     border-top: 4px solid #d90429;
   }
   h1 { margin: 0; font-size: 1.3rem; color: #333; text-transform: uppercase; }
-  .date-display { font-size: 3rem; font-weight: bold; color: #d90429; margin: 5px 0; }
+  .date-display { font-size: 2.5rem; font-weight: bold; color: #d90429; margin: 5px 0; }
   h2 { margin: 0 0 10px 0; color: #1d3557; font-size: 1.2rem; }
   p { line-height: 1.5; font-size: 1rem; color: #444; }
   input[type=range] { width: 100%; margin: 15px 0; accent-color: #d90429; }
