@@ -11,6 +11,8 @@
 **Context:** Digital Humanities Demonstrator  
 **Primary Source:** Westall, R. W. (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Brill.
 
+**Live demo:** https://yin-renlong.github.io/caesar-civil-war-map/
+
 ---
 
 ## 1. Abstract
