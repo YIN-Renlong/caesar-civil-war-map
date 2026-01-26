@@ -53,7 +53,7 @@ To circumvent the need for manual digitization of rough historical atlases, this
 
 ## 4. Current Status & Roadmap
 
-**Current Version:** Prototype v0.9
+**Current Version:** Prototype v0.5
 
 ### Known Limitations
 *   **Internal Boundaries:** While the coastlines are highly accurate due to the clipping algorithm, the internal borders between provinces (e.g., Gaul/Spain) are currently defined by the edges of the rough input polygons. They represent algorithmic approximations rather than precise historical survey lines.
@@ -81,5 +81,5 @@ npm run dev
 ## 6. Credits & Bibliography
 
 - **Primary Historical Source:** Westall, R. (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Leiden: Brill.
-- **Geospatial Data Repository:** Heath, S. (ISAW/NYU). *Roman Maps*. GitHub. Available: [https://github.com/sfsheath/roman-maps](https://www.google.com/url?sa=E&q=https%3A%2F%2Fgithub.com%2Fsfsheath%2Froman-maps)
+- **Geospatial Data Repository:** Heath, S. (ISAW/NYU). *Roman Maps*. GitHub. Available: [https://github.com/sfsheath/roman-maps](https://github.com/sfsheath/roman-map)
 - **Basemap Provider:** Esri World Shaded Relief.
