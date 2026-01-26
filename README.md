@@ -32,7 +32,7 @@ The historical timeline is powered by a custom JSON dataset derived from Prof. W
 *   **Geospatial Accuracy:** The internal borders between provinces (e.g., the exact line between Cisalpine Gaul and Italy) are currently algorithmic approximations. Future work will involve vectorizing precise historical boundaries to replace the current rough input polygons.
 
 ## Credits & Sources
-*   **Historical Text:** Westall, R. W. (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Brill.
+*   **Historical Text:** Westall, R. Westall (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Brill.
 *   **Base Geographic Data:** Sebastian Heath (ISAW/NYU), *roman-maps* repository.
 *   **Basemaps:** Esri, USGS, NOAA.
 
