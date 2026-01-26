@@ -1,179 +1,182 @@
 <script>
+  // We use negative numbers for BC dates (-49 = 49 BC)
   let year = -50; 
   
-  // --- REAL HISTORICAL DATA (Caesar's Civil War) ---
+  // --- REAL DATA EXTRACTED FROM WIKIPEDIA ---
   const historicalData = [
     {
       year: -50,
       title: "50 BC: The Standoff",
-      desc: "Tensions rise. The Senate, led by Pompey, demands Caesar disband his legions in Gaul. Caesar refuses unless Pompey does the same. Rome is on the brink.",
+      desc: "Background: Caesar finishes the Gallic Wars. The Senate (Optimates), fearful of his power, demands he disband his army. Pompey aligns with the Senate.",
       factions: {
-        "gaul": "caesar",
-        "italy": "senate",
-        "spain": "senate",
-        "greece": "senate",
+        "gallia": "caesar",
+        "hispania": "senate",
+        "italia": "senate",
+        "graecia": "senate",
         "asia": "senate",
         "africa": "senate",
-        "egypt": "neutral"
+        "aegyptus": "neutral"
       }
     },
     {
       year: -49,
-      title: "49 BC: Crossing the Rubicon",
-      desc: "Caesar crosses the Rubicon (Jan). Pompey and the Senate flee Rome for Greece to gather an army. Caesar marches south, taking Italy, then pivots west to conquer Spain in a lightning campaign (Ilerda).",
+      title: "49 BC: Rubicon & Ilerda",
+      desc: "Jan: Caesar crosses the Rubicon. Pompey flees Italy for Greece. Aug: Caesar marches to Spain (Battle of Ilerda) and defeats Pompey's legates.",
       factions: {
-        "gaul": "caesar",
-        "italy": "caesar", // Caesar takes Italy
-        "spain": "caesar", // Caesar takes Spain
-        "greece": "senate",
+        "gallia": "caesar",
+        "hispania": "caesar", // Won at Ilerda
+        "italia": "caesar",   // Taken after Pompey fled
+        "graecia": "senate",  // Pompey regroups here
         "asia": "senate",
-        "africa": "senate",
-        "egypt": "neutral"
+        "africa": "senate",   // Curio defeated by Juba I
+        "aegyptus": "neutral"
       }
     },
     {
       year: -48,
       title: "48 BC: Pharsalus",
-      desc: "Caesar crosses the Adriatic. Despite a setback at Dyrrachium, he crushes Pompey at the Battle of Pharsalus. Pompey flees to Egypt and is murdered by King Ptolemy XIII.",
+      desc: "The Decisive Battle. Caesar invades Greece. Despite a setback at Dyrrachium, he crushes Pompey at Pharsalus. Pompey flees to Egypt and is assassinated.",
       factions: {
-        "gaul": "caesar",
-        "italy": "caesar",
-        "spain": "caesar",
-        "greece": "caesar", // Caesar wins Greece
+        "gallia": "caesar",
+        "hispania": "caesar",
+        "italia": "caesar",
+        "graecia": "caesar",  // Won at Pharsalus
         "asia": "senate",
         "africa": "senate",
-        "egypt": "contest" // Caesar arrives in Alexandria
+        "aegyptus": "contest" // Caesar arrives, intervenes in dynastic war
       }
     },
     {
       year: -47,
-      title: "47 BC: The East & Cleopatra",
-      desc: "Caesar wins the Alexandrian War, installing Cleopatra as Queen. He marches through Asia Minor, defeating Pharnaces at Zela ('Veni, vidi, vici').",
+      title: "47 BC: The East (Zela)",
+      desc: "Caesar secures Egypt for Cleopatra. He marches north to Asia Minor and defeats Pharnaces at Zela ('Veni, Vidi, Vici'). The Senate regroups in Africa.",
       factions: {
-        "gaul": "caesar",
-        "italy": "caesar",
-        "spain": "caesar",
-        "greece": "caesar",
-        "asia": "caesar", // Caesar secures Asia
-        "africa": "senate", // Senate regroups here
-        "egypt": "client" // Cleopatra allied to Caesar
+        "gallia": "caesar",
+        "hispania": "caesar", // Governor Cassius Longinus unpopular
+        "italia": "caesar",
+        "graecia": "caesar",
+        "asia": "caesar",     // Won at Zela
+        "africa": "senate",   // Metellus Scipio & Cato
+        "aegyptus": "client"  // Cleopatra secured
       }
     },
     {
       year: -46,
       title: "46 BC: Thapsus",
-      desc: "Caesar invades Africa. He destroys the Optimates' army at Thapsus. Cato the Younger commits suicide. Caesar returns to Rome for a quadruple triumph.",
+      desc: "Caesar invades Africa. He destroys the Optimates' army at Thapsus. Cato the Younger commits suicide at Utica. Juba's Numidia is annexed.",
       factions: {
-        "gaul": "caesar",
-        "italy": "caesar",
-        "spain": "senate", // Pompey's sons revolt in Spain
-        "greece": "caesar",
+        "gallia": "caesar",
+        "hispania": "senate", // Revolt by Pompey's sons
+        "italia": "caesar",
+        "graecia": "caesar",
         "asia": "caesar",
-        "africa": "caesar", // Africa taken
-        "egypt": "client"
+        "africa": "caesar",   // Won at Thapsus
+        "aegyptus": "client"
       }
     },
     {
       year: -45,
-      title: "45 BC: Munda & The End",
-      desc: "The final battle. Caesar defeats the sons of Pompey at Munda in Spain. The Civil War is effectively over. Caesar is made Dictator Perpetuo.",
+      title: "45 BC: Munda",
+      desc: "The Final Battle. Caesar returns to Spain and defeats Gnaeus Pompey at Munda. The Civil War is effectively over. Caesar is Dictator Perpetuo.",
       factions: {
-        "gaul": "caesar",
-        "italy": "caesar",
-        "spain": "caesar", // Revolt crushed
-        "greece": "caesar",
+        "gallia": "caesar",
+        "hispania": "caesar", // Won at Munda
+        "italia": "caesar",
+        "graecia": "caesar",
         "asia": "caesar",
         "africa": "caesar",
-        "egypt": "client"
+        "aegyptus": "client"
       }
     },
     {
       year: -44,
       title: "44 BC: The Ides of March",
-      desc: "Caesar prepares for a campaign against Parthia, but is assassinated on March 15th by Brutus, Cassius, and others. Chaos returns.",
+      desc: "Caesar is assassinated on March 15th by Brutus, Cassius, and others. The Republic falls into chaos once more.",
       factions: {
-        "gaul": "caesar",
-        "italy": "neutral", // Chaos
-        "spain": "caesar",
-        "greece": "neutral",
+        "gallia": "caesar",
+        "hispania": "caesar",
+        "italia": "neutral", // Chaos
+        "graecia": "neutral",
         "asia": "neutral",
         "africa": "caesar",
-        "egypt": "client"
+        "aegyptus": "client"
       }
     }
   ];
 
+  // Reactive Logic: Updates immediately when 'year' changes
   $: currentData = historicalData.find(d => d.year === year) || historicalData[0];
   
+  // COLOR PALETTE
   const colors = {
-    caesar: "#C8102E", // Roman Red
-    senate: "#2D5054", // Pompey Blue/Green
-    neutral: "#d4d4bc", // Map/Land color
-    contest: "#E87EA1", // Conflict pink
-    client:  "#98586c"  // Purple for Cleopatra
+    caesar: "#991b1b",  // Deep Roman Red
+    senate: "#1e3a8a",  // Pompeian Blue
+    neutral: "#d4d4d8", // Grey
+    contest: "#f59e0b", // Warning Orange
+    client:  "#701a75"  // Royal Purple (Cleopatra)
   };
 
   function getFill(provinceId) {
     const owner = currentData.factions[provinceId];
-    return colors[owner] || "#d4d4bc";
+    return colors[owner] || "#cccccc";
   }
 </script>
 
 <main>
   <div class="layout">
+    <!-- MAP SECTION -->
     <div class="map-container">
       <!-- 
-        IMPROVED MAP:
-        This SVG uses stylized paths that actually resemble the Mediterranean.
-        ViewBox 0 0 1000 600
+         Vector Map of the Mediterranean.
+         Coordinates are simplified (Low Poly) to look like a real map without needing big files.
       -->
       <svg viewBox="0 0 1000 600" class="interactive-map">
-        <!-- Sea Background -->
-        <rect width="1000" height="600" fill="#7FAac0" />
+        <!-- Sea -->
+        <rect width="1000" height="600" fill="#93c5fd" />
 
-        <!-- 1. HISPANIA (Spain) -->
+        <!-- 1. HISPANIA (Spain/Portugal) -->
         <path 
           d="M 50,350 L 180,330 L 220,400 L 150,480 L 80,450 Z" 
-          fill={getFill('spain')} 
+          fill={getFill('hispania')} 
           class="province"
         />
-        <text x="100" y="400" class="label">HISPANIA</text>
+        <text x="110" y="410" class="label">HISPANIA</text>
 
-        <!-- 2. GALLIA (France) -->
+        <!-- 2. GALLIA (France/Belgium) -->
         <path 
           d="M 180,330 L 220,180 L 380,160 L 400,280 L 320,320 L 220,400 Z" 
-          fill={getFill('gaul')} 
+          fill={getFill('gallia')} 
           class="province"
         />
-        <text x="280" y="240" class="label">GALLIA</text>
+        <text x="280" y="260" class="label">GALLIA</text>
 
         <!-- 3. ITALIA (The Boot) -->
         <path 
           d="M 320,320 L 400,280 L 450,280 L 520,380 L 480,450 L 420,350 Z" 
-          fill={getFill('italy')} 
+          fill={getFill('italia')} 
           class="province"
         />
         <text x="440" y="340" class="label">ITALIA</text>
 
         <!-- 4. GRAECIA (Greece/Macedonia) -->
         <path 
-          d="M 500,300 L 600,290 L 620,400 L 520,420 L 520,380 Z" 
-          fill={getFill('greece')} 
+          d="M 500,300 L 600,290 L 630,400 L 520,430 L 520,380 Z" 
+          fill={getFill('graecia')} 
           class="province"
         />
-        <text x="540" y="350" class="label">GRAECIA</text>
+        <text x="560" y="360" class="label">GRAECIA</text>
 
-        <!-- 5. ASIA (Turkey) -->
+        <!-- 5. ASIA (Turkey/Syria) -->
         <path 
-          d="M 620,290 L 800,280 L 820,380 L 650,400 L 620,400 Z" 
+          d="M 630,290 L 850,280 L 870,400 L 660,420 L 630,400 Z" 
           fill={getFill('asia')} 
           class="province"
         />
-        <text x="700" y="340" class="label">ASIA</text>
+        <text x="750" y="350" class="label">ASIA</text>
 
         <!-- 6. AFRICA (Tunisia/Libya) -->
         <path 
-          d="M 200,500 L 550,480 L 550,600 L 200,600 Z" 
+          d="M 180,500 L 550,480 L 550,600 L 180,600 Z" 
           fill={getFill('africa')} 
           class="province"
         />
@@ -181,27 +184,34 @@
 
         <!-- 7. AEGYPTUS (Egypt) -->
         <path 
-          d="M 600,450 L 800,450 L 800,600 L 600,600 Z" 
-          fill={getFill('egypt')} 
+          d="M 600,450 L 870,450 L 870,600 L 600,600 Z" 
+          fill={getFill('aegyptus')} 
           class="province"
         />
-        <text x="680" y="520" class="label">AEGYPTUS</text>
+        <text x="730" y="520" class="label">AEGYPTUS</text>
       </svg>
       
+      <!-- CONTROLS -->
       <div class="timeline-area">
-        <div class="timeline-controls">
-           <button on:click={() => year = Math.max(-50, year - 1)}>&larr;</button>
-           <input type="range" min="-50" max="-44" step="1" bind:value={year} />
-           <button on:click={() => year = Math.min(-44, year + 1)}>&rarr;</button>
-        </div>
         <div class="year-display">{Math.abs(year)} BC</div>
+        <input 
+          type="range" 
+          min="-50" 
+          max="-44" 
+          step="1" 
+          bind:value={year} 
+        />
+        <div class="ticks">
+          <span>50</span><span>49</span><span>48</span><span>47</span><span>46</span><span>45</span><span>44</span>
+        </div>
       </div>
     </div>
 
+    <!-- INFO PANEL -->
     <div class="info-panel">
       <div class="header">
         <h1>CAESAR'S CIVIL WAR</h1>
-        <h3>Mapping the Republic's Fall</h3>
+        <div class="subtitle">Mapping the Republic's Fall</div>
       </div>
       
       <div class="content">
@@ -209,116 +219,101 @@
         <p>{currentData.desc}</p>
         
         <div class="legend">
-          <h4>Key Factions</h4>
-          <div class="legend-item"><span style="background:{colors.caesar}"></span> Caesar</div>
-          <div class="legend-item"><span style="background:{colors.senate}"></span> Pompey / Senate</div>
-          <div class="legend-item"><span style="background:{colors.client}"></span> Egyptian Client</div>
-          <div class="legend-item"><span style="background:{colors.neutral}"></span> Neutral / Contested</div>
+          <h3>Factions</h3>
+          <div class="legend-item"><span style="background:#991b1b"></span> Caesar</div>
+          <div class="legend-item"><span style="background:#1e3a8a"></span> Senate / Pompey</div>
+          <div class="legend-item"><span style="background:#701a75"></span> Client Kingdom</div>
+          <div class="legend-item"><span style="background:#f59e0b"></span> Contested Zone</div>
         </div>
       </div>
 
       <div class="footer">
-        <p>Built for Prof. Westall | 2026</p>
+        <p>Built with Svelte | Data from Wikipedia</p>
       </div>
     </div>
   </div>
 </main>
 
 <style>
-  :global(body) { margin: 0; padding: 0; font-family: "Garamond", "Georgia", serif; background-color: #2b2b2b; color: #f4f4e8; }
+  :global(body) { margin: 0; padding: 0; font-family: 'Georgia', serif; background-color: #f3f4f6; color: #1f2937; }
   
   .layout { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
   
   .map-container { 
     flex: 3; 
     position: relative; 
-    background: #7FAac0; /* Sea Color */
+    background: #93c5fd; 
     display: flex; 
     flex-direction: column; 
-    border-right: 4px solid #1a1a1a;
+    border-right: 5px solid #1f2937;
   }
 
-  .interactive-map { width: 100%; height: 100%; }
+  .interactive-map { width: 100%; height: 85%; }
   
   .province {
-    stroke: #3e3e3e;
+    stroke: #ffffff;
     stroke-width: 2px;
-    transition: fill 0.8s ease; /* Smooth color transition */
+    transition: fill 0.8s ease-in-out; /* SMOOTH COLOR CHANGE */
     cursor: pointer;
   }
-  .province:hover { opacity: 0.9; stroke: white; }
+  .province:hover { opacity: 0.8; stroke-width: 4px; }
 
   .label { 
-    fill: rgba(255,255,255,0.8); 
-    font-family: "Trajan Pro", "Cinzel", serif; 
-    font-size: 16px; 
-    font-weight: bold; 
+    fill: white; 
+    font-family: sans-serif; 
+    font-size: 14px; 
+    font-weight: 900; 
     pointer-events: none; 
-    text-shadow: 1px 1px 4px black;
+    text-shadow: 0px 0px 4px rgba(0,0,0,0.8);
     text-anchor: middle;
-  }
-
-  .timeline-area { 
-    background: #1a1a1a; 
-    padding: 15px; 
-    display: flex; 
-    flex-direction: column;
-    align-items: center; 
-    color: #f4f4e8; 
-    height: 15%;
-    border-top: 2px solid #444;
-  }
-
-  .timeline-controls {
-    display: flex;
-    align-items: center;
-    width: 80%;
-    margin-bottom: 10px;
-  }
-
-  button {
-    background: none;
-    border: 1px solid #f4f4e8;
-    color: #f4f4e8;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 4px;
-  }
-  button:hover { background: #f4f4e8; color: #1a1a1a; }
-
-  input[type=range] { flex-grow: 1; margin: 0 15px; cursor: pointer; accent-color: #C8102E; }
-  
-  .year-display { 
-    font-size: 2.5rem; 
-    font-weight: bold; 
-    color: #C8102E;
     letter-spacing: 2px;
   }
 
+  .timeline-area { 
+    background: #1f2937; 
+    height: 15%;
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+  }
+
+  input[type=range] { width: 100%; max-width: 600px; margin: 10px 0; accent-color: #991b1b; cursor: pointer; }
+  
+  .year-display { font-size: 2rem; font-weight: bold; color: #fca5a5; font-family: monospace; }
+  
+  .ticks { display: flex; justify-content: space-between; width: 100%; max-width: 600px; font-size: 0.8rem; color: #9ca3af; }
+
   .info-panel { 
     flex: 1; 
-    background: #f4f4e8; /* Paper color */
-    color: #2b2b2b;
+    min-width: 300px;
+    background: #fdfbf7; /* Paper texture color */
     padding: 40px; 
     display: flex; 
     flex-direction: column; 
-    box-shadow: -10px 0 20px rgba(0,0,0,0.5);
+    box-shadow: -10px 0 25px rgba(0,0,0,0.1);
     overflow-y: auto;
   }
 
-  .header h1 { color: #C8102E; margin: 0; font-size: 2rem; border-bottom: 2px solid #C8102E; padding-bottom: 10px; }
-  .header h3 { margin-top: 5px; color: #555; font-style: italic; }
+  .header h1 { color: #991b1b; margin: 0; font-size: 2.2rem; border-bottom: 4px solid #991b1b; padding-bottom: 15px; }
+  .subtitle { margin-top: 10px; font-style: italic; color: #4b5563; }
 
-  .content { margin-top: 30px; flex-grow: 1; }
-  .year-title { font-size: 1.8rem; margin-bottom: 10px; color: #2D5054; }
-  p { font-size: 1.1rem; line-height: 1.6; }
+  .content { margin-top: 40px; flex-grow: 1; }
+  .year-title { font-size: 1.5rem; color: #1f2937; margin-bottom: 15px; }
+  p { line-height: 1.8; font-size: 1.1rem; }
 
-  .legend { margin-top: 40px; background: #e0e0d0; padding: 20px; border-radius: 4px; border: 1px solid #ccc; }
-  .legend h4 { margin-top: 0; text-transform: uppercase; font-size: 0.9rem; color: #666; }
+  .legend { margin-top: 40px; background: #e5e7eb; padding: 20px; border-radius: 8px; }
+  .legend h3 { margin-top: 0; font-size: 1rem; text-transform: uppercase; color: #374151; }
   .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
-  .legend-item span { display: block; width: 15px; height: 15px; margin-right: 10px; border: 1px solid #555; }
+  .legend-item span { display: block; width: 20px; height: 20px; margin-right: 12px; border: 1px solid #9ca3af; border-radius: 3px; }
 
-  .footer { margin-top: auto; font-size: 0.8rem; color: #888; text-align: center; border-top: 1px solid #ccc; padding-top: 20px; }
+  .footer { margin-top: auto; font-size: 0.8rem; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px; }
 
-  @media (max-width: 900px) { .layout { flex-direction: column; } .timeline-area { height: auto; } .map-container { height: 50vh; } }
+  @media (max-width: 1024px) { 
+    .layout { flex-direction: column; overflow: auto; } 
+    .map-container { height: 60vh; width: 100%; }
+    .info-panel { width: auto; height: auto; }
+  }
 </style>
