@@ -1,47 +1,40 @@
-# Svelte + Vite
+# Spatiotemporal Visualization of Caesar's Civil War (49–45 BCE)
 
-This template should help get you started developing with Svelte in Vite.
+**Author:** YIN Renlong  
+**Affiliation:** Faculty of Engineering Science, KU Leuven  
+**Context:** A Digital Humanities demonstrator based on the text *Caesar's Civil War: Historical Reality and Fabrication* by Prof. Richard W. Westall.
 
-## Recommended IDE Setup
+## Project Overview
+This web application provides an interactive, data-driven visualization of the geopolitical shifts during the Great Roman Civil War. Unlike static historical maps, this tool utilizes a continuous temporal slider to visualize the rapid fluctuation of territorial control between Caesarian and Senatorial factions on a month-by-month basis.
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+The project bridges the gap between traditional historiography and modern geospatial web technologies, offering a dynamic narrative tool for students and researchers.
 
-## Need an official Svelte framework?
+## Technical Methodology
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+### 1. The Stack
+*   **Framework:** Svelte (Vite) for reactive UI and state management.
+*   **Mapping Engine:** Leaflet.js with Esri World Shaded Relief basemaps.
+*   **Geospatial Processing:** Turf.js (Geospatial analysis engine).
 
-## Technical considerations
+### 2. The "Snagging" Algorithm (Geospatial Clipping)
+To allow for rapid prototyping of provincial control without manual digitization of historical atlases, this project employs a novel client-side clipping algorithm. 
+*   **Input 1:** A high-precision GeoJSON vector of the Roman Empire's outer extent in 60 BCE (Source: *sfsheath/roman-maps*).
+*   **Input 2:** Approximate "Rough Polygons" defining the general centroids of major provinces (Gaul, Hispania, Italia, etc.).
+*   **Process:** The application uses `Turf.js` to calculate the boolean intersection of the rough inputs and the detailed empire outline in real-time. 
+*   **Result:** This generates visually coherent provincial borders that adhere perfectly to the detailed coastlines and outer frontiers of the Republic, ensuring a professional aesthetic even with simplified input data.
 
-**Why use this over SvelteKit?**
+### 3. Event-Driven Data Structure
+The historical timeline is powered by a custom JSON dataset derived from Prof. Westall's text. The data is optimized into an "Event-Driven" model, storing state changes only when significant military or political shifts occur, ensuring high performance and narrative clarity.
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+## Current Status & Limitations
+*   **Status:** Functional Prototype (v0.9).
+*   **Data Accuracy:** The temporal event data is structurally complete.
+*   **Geospatial Accuracy:** The internal borders between provinces (e.g., the exact line between Cisalpine Gaul and Italy) are currently algorithmic approximations. Future work will involve vectorizing precise historical boundaries to replace the current rough input polygons.
 
-This template contains as little as possible to get started with Vite + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+## Credits & Sources
+*   **Historical Text:** Westall, R. W. (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Brill.
+*   **Base Geographic Data:** Sebastian Heath (ISAW/NYU), *roman-maps* repository.
+*   **Basemaps:** Esri, USGS, NOAA.
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `checkJs` in the JS template?**
-
-It is likely that most cases of changing variable types in runtime are likely to be accidental, rather than deliberate. This provides advanced typechecking out of the box. Should you like to take advantage of the dynamically-typed nature of JavaScript, it is trivial to change the configuration.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/sveltejs/svelte-hmr/tree/master/packages/svelte-hmr#preservation-of-local-state).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```js
-// store.js
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
-```
+---
+*Deployed via GitHub Pages.*
