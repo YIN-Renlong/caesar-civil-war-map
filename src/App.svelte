@@ -31,12 +31,10 @@
   };
 
   // --- 2. ROUGH LOCAL SHAPES ---
-  // Notice: These are blocky and simple. We rely on the algorithm 
-  // to "snag" them to the beautiful coastline.
+  // These are the "Dough" for our Cookie Cutter.
   const roughProvinces = {
     "type": "FeatureCollection",
     "features": [
-      // I intentionally made these extend into the ocean to prove the algorithm works
       { "type": "Feature", "properties": { "provname": "Gaul" }, "geometry": { "type": "Polygon", "coordinates": [[[-6.0, 42.0], [9.0, 42.0], [9.0, 52.0], [-6.0, 52.0], [-6.0, 42.0]]] } },
       { "type": "Feature", "properties": { "provname": "Hispania" }, "geometry": { "type": "Polygon", "coordinates": [[[-12.0, 35.0], [4.0, 35.0], [4.0, 44.0], [-12.0, 44.0], [-12.0, 35.0]]] } },
       { "type": "Feature", "properties": { "provname": "Italia" }, "geometry": { "type": "Polygon", "coordinates": [[[6.0, 36.0], [19.0, 36.0], [19.0, 47.0], [6.0, 47.0], [6.0, 36.0]]] } },
@@ -62,20 +60,19 @@
     }).addTo(map);
     
     try {
-      // Fetch the Detailed Outline
+      // Fetch the Detailed Outline ("The Cookie Cutter")
       const outlineResponse = await fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/refs/heads/master/roman_empire_bc_60_extent.geojson');
       const empireOutline = await outlineResponse.json();
 
-      // Draw the black outline
+      // Layer 1: Draw the Black Outline
       L.geoJSON(empireOutline, { 
         style: { color: '#000', weight: 2.5, fill: false, interactive: false } 
       }).addTo(map);
 
       // --- 3. THE "SNAGGING" ALGORITHM ---
-      // We calculate the intersection of our Rough Shapes + Detailed Outline
       const snaggedProvinces = calculateSnagging(roughProvinces, empireOutline);
       
-      // Draw the RESULT of the calculation
+      // Layer 2: Draw the SNAGGED results (The Colors)
       provinceLayer = L.geoJSON(snaggedProvinces, { style: getStyle }).addTo(map);
 
     } catch (error) {
@@ -83,28 +80,31 @@
     }
   });
 
-  // --- THE ALGORITHM FUNCTION ---
+  // --- UPDATED ALGORITHM (FIXED FOR TURF v7) ---
   function calculateSnagging(roughData, detailedData) {
     let snaggedFeatures = [];
 
-    // Loop through every Rough Province (Square)
+    // Loop through every Rough Province
     roughData.features.forEach(roughFeature => {
-      
-      // Loop through every piece of the Detailed Empire (Islands, Mainland)
+      // Loop through every piece of the Detailed Empire
       detailedData.features.forEach(detailedFeature => {
         
-        // TURF.JS MAGIC: 
-        // "Find the area that exists inside BOTH the Rough Square AND the Detailed Map"
-        const intersection = turf.intersect(
-          turf.feature(roughFeature.geometry), 
-          turf.feature(detailedFeature.geometry)
-        );
+        try {
+          // *** FIX IS HERE ***
+          // We must wrap both features in a "turf.featureCollection" array
+          const intersection = turf.intersect(
+            turf.featureCollection([
+              turf.feature(roughFeature.geometry), 
+              turf.feature(detailedFeature.geometry)
+            ])
+          );
 
-        // If they touch, we get a result!
-        if (intersection) {
-          // Copy the name (e.g., "Gaul") to the new detailed shape
-          intersection.properties = roughFeature.properties;
-          snaggedFeatures.push(intersection);
+          if (intersection) {
+            intersection.properties = roughFeature.properties;
+            snaggedFeatures.push(intersection);
+          }
+        } catch (e) {
+          // If a geometry is invalid, just skip it to prevent crash
         }
       });
     });
@@ -118,7 +118,7 @@
 
     return {
       fillColor: colors[owner],
-      weight: 1,       
+      weight: 0,       // No border for the shapes themselves, looks cleaner inside the black outline
       color: 'white',  
       fillOpacity: 0.6
     };
