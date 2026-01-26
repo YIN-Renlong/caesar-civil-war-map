@@ -1,23 +1,27 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
   import { historicalData } from './historical-data.js';
-  
-  // --- 1. IMPORT TURF (THE MATH LIBRARY) ---
   import * as turf from '@turf/turf';
 
   let map;
   let provinceLayer; 
   let eventIndex = 0; 
+  
+  // --- PLAYBACK VARIABLES ---
+  let isPlaying = false;
+  let playInterval;
+  const PLAY_SPEED_MS = 800; // How fast the timeline moves
 
   $: currentData = historicalData[eventIndex];
 
+  // --- 1. FIXED COLORS (Capitalized to match your Data) ---
   const colors = {
-    caesar: "#d90429", 
-    senate: "#203a43", 
-    Contested: "#fca311", 
-    Neutral: "transparent"
+    "Caesar": "#d90429", // Red
+    "Senate": "#203a43", // Dark Blue
+    "Contested": "#fca311", // Orange
+    "Neutral": "transparent"
   };
 
   const provinceNameMapper = {
@@ -31,7 +35,6 @@
   };
 
   // --- 2. ROUGH LOCAL SHAPES ---
-  // These are the "Dough" for our Cookie Cutter.
   const roughProvinces = {
     "type": "FeatureCollection",
     "features": [
@@ -60,19 +63,15 @@
     }).addTo(map);
     
     try {
-      // Fetch the Detailed Outline ("The Cookie Cutter")
       const outlineResponse = await fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/refs/heads/master/roman_empire_bc_60_extent.geojson');
       const empireOutline = await outlineResponse.json();
 
-      // Layer 1: Draw the Black Outline
       L.geoJSON(empireOutline, { 
         style: { color: '#000', weight: 2.5, fill: false, interactive: false } 
       }).addTo(map);
 
-      // --- 3. THE "SNAGGING" ALGORITHM ---
       const snaggedProvinces = calculateSnagging(roughProvinces, empireOutline);
       
-      // Layer 2: Draw the SNAGGED results (The Colors)
       provinceLayer = L.geoJSON(snaggedProvinces, { style: getStyle }).addTo(map);
 
     } catch (error) {
@@ -80,35 +79,30 @@
     }
   });
 
-  // --- UPDATED ALGORITHM (FIXED FOR TURF v7) ---
+  // Cleanup timer when component is destroyed
+  onDestroy(() => {
+    if (playInterval) clearInterval(playInterval);
+  });
+
+  // --- 3. SNAGGING ALGORITHM (Fixed for Turf v7) ---
   function calculateSnagging(roughData, detailedData) {
     let snaggedFeatures = [];
-
-    // Loop through every Rough Province
     roughData.features.forEach(roughFeature => {
-      // Loop through every piece of the Detailed Empire
       detailedData.features.forEach(detailedFeature => {
-        
         try {
-          // *** FIX IS HERE ***
-          // We must wrap both features in a "turf.featureCollection" array
           const intersection = turf.intersect(
             turf.featureCollection([
               turf.feature(roughFeature.geometry), 
               turf.feature(detailedFeature.geometry)
             ])
           );
-
           if (intersection) {
             intersection.properties = roughFeature.properties;
             snaggedFeatures.push(intersection);
           }
-        } catch (e) {
-          // If a geometry is invalid, just skip it to prevent crash
-        }
+        } catch (e) {}
       });
     });
-
     return { type: "FeatureCollection", features: snaggedFeatures };
   }
 
@@ -118,7 +112,7 @@
 
     return {
       fillColor: colors[owner],
-      weight: 0,       // No border for the shapes themselves, looks cleaner inside the black outline
+      weight: 0, 
       color: 'white',  
       fillOpacity: 0.6
     };
@@ -140,6 +134,36 @@
 
       return `${monthName}, ${year} BC`;
   }
+
+  // --- 4. PLAY BUTTON LOGIC ---
+  function togglePlay() {
+    if (isPlaying) {
+      pause();
+    } else {
+      play();
+    }
+  }
+
+  function play() {
+    isPlaying = true;
+    playInterval = setInterval(() => {
+      if (eventIndex < historicalData.length - 1) {
+        eventIndex++;
+      } else {
+        pause(); // Stop when we reach the end
+      }
+    }, PLAY_SPEED_MS);
+  }
+
+  function pause() {
+    isPlaying = false;
+    clearInterval(playInterval);
+  }
+
+  // Pause if user manually drags the slider
+  function handleSliderInput() {
+    pause();
+  }
 </script>
 
 <main>
@@ -151,17 +175,29 @@
       <h2>{currentData.title}</h2>
       <p>{currentData.key_events}</p>
       
-      <input 
-        type="range" 
-        min="0" 
-        max={historicalData.length - 1} 
-        step="1" 
-        bind:value={eventIndex} 
-      />
+      <!-- CONTROLS CONTAINER -->
+      <div class="controls">
+        <button class="play-btn" on:click={togglePlay}>
+          {#if isPlaying}
+            <span>&#10074;&#10074;</span> <!-- Pause Icon -->
+          {:else}
+            <span>&#9658;</span> <!-- Play Icon -->
+          {/if}
+        </button>
+
+        <input 
+          type="range" 
+          min="0" 
+          max={historicalData.length - 1} 
+          step="1" 
+          bind:value={eventIndex}
+          on:input={handleSliderInput} 
+        />
+      </div>
 
       <div class="legend">
-        <div class="item"><span style="background:{colors.caesar}"></span> Caesar</div>
-        <div class="item"><span style="background:{colors.senate}"></span> Senate</div>
+        <div class="item"><span style="background:{colors.Caesar}"></span> Caesar</div>
+        <div class="item"><span style="background:{colors.Senate}"></span> Senate</div>
         <div class="item"><span style="background:{colors.Contested}"></span> Contested</div>
       </div>
       <div class="credits">
@@ -193,7 +229,32 @@
   .date-display { font-size: 2.5rem; font-weight: bold; color: #d90429; margin: 5px 0; }
   h2 { margin: 0 0 10px 0; color: #1d3557; font-size: 1.2rem; }
   p { line-height: 1.5; font-size: 1rem; color: #444; }
-  input[type=range] { width: 100%; margin: 15px 0; accent-color: #d90429; }
+  
+  /* NEW CONTROLS STYLING */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+  }
+  .play-btn {
+    background: #d90429;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+  }
+  .play-btn:hover { background: #b00321; }
+  
+  input[type=range] { flex-grow: 1; accent-color: #d90429; }
+  
   .legend { display: flex; gap: 20px; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px; }
   .item { display: flex; align-items: center; font-weight: bold; font-size: 0.9rem; }
   .item span { width: 15px; height: 15px; margin-right: 8px; border: 1px solid #555; }
