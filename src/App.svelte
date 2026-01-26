@@ -3,48 +3,48 @@
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
   import { historicalData } from './historical-data.js';
+  
+  // --- 1. IMPORT TURF (THE MATH LIBRARY) ---
+  import * as turf from '@turf/turf';
 
   let map;
   let provinceLayer; 
-
   let eventIndex = 0; 
 
-  // --- REACTIVE LOGIC ---
   $: currentData = historicalData[eventIndex];
 
   const colors = {
-    caesar: "#d90429", // Red
-    senate: "#203a43", // Dark Blue
-    Contested: "#fca311", // Orange
+    caesar: "#d90429", 
+    senate: "#203a43", 
+    Contested: "#fca311", 
     Neutral: "transparent"
   };
 
-  // This maps the specific names in the GeoJSON to your data names
   const provinceNameMapper = {
-    "GALLIA LUGDUNENSIS": "Gaul",
-    "GALLIA NARBONENSIS": "Gaul",
-    "GALLIA AQUITANIA": "Gaul",
-    "GALLIA BELGICA": "Gaul",
-    "GERMANIA INFERIOR": "Gaul",
-    "GERMANIA SUPERIOR": "Gaul",
-    "HISPANIA TARRACONENSIS": "Hispania",
-    "HISPANIA BAETICA": "Hispania",
-    "LUSITANIA": "Hispania",
-    "ITALIA": "Italia",
-    "SICILIA": "Italia",
-    "SARDINIA ET CORSICA": "Italia",
-    "AFRICA PROCONSULARIS": "Africa",
-    "NUMIDIA": "Africa",
-    "ACHAEA": "Greece",
-    "MACEDONIA": "Greece",
-    "CRETA ET CYRENAICA": "Greece",
-    "ASIA": "Asia",
-    "BITHYNIA ET PONTUS": "Asia",
-    "GALATIA": "Asia",
-    "LYCIA ET PAMPHYLIA": "Asia",
-    "CILICIA": "Asia",
-    "AEGYPTUS": "Aegyptus",
-    "CYPRUS": "Asia"
+    "Gaul": "Gaul",
+    "Hispania": "Hispania",
+    "Italia": "Italia",
+    "Africa": "Africa",
+    "Greece": "Greece",
+    "Asia": "Asia",
+    "Aegyptus": "Aegyptus"
+  };
+
+  // --- 2. ROUGH LOCAL SHAPES ---
+  // Notice: These are blocky and simple. We rely on the algorithm 
+  // to "snag" them to the beautiful coastline.
+  const roughProvinces = {
+    "type": "FeatureCollection",
+    "features": [
+      // I intentionally made these extend into the ocean to prove the algorithm works
+      { "type": "Feature", "properties": { "provname": "Gaul" }, "geometry": { "type": "Polygon", "coordinates": [[[-6.0, 42.0], [9.0, 42.0], [9.0, 52.0], [-6.0, 52.0], [-6.0, 42.0]]] } },
+      { "type": "Feature", "properties": { "provname": "Hispania" }, "geometry": { "type": "Polygon", "coordinates": [[[-12.0, 35.0], [4.0, 35.0], [4.0, 44.0], [-12.0, 44.0], [-12.0, 35.0]]] } },
+      { "type": "Feature", "properties": { "provname": "Italia" }, "geometry": { "type": "Polygon", "coordinates": [[[6.0, 36.0], [19.0, 36.0], [19.0, 47.0], [6.0, 47.0], [6.0, 36.0]]] } },
+      { "type": "Feature", "properties": { "provname": "Africa" }, "geometry": { "type": "Polygon", "coordinates": [[[-1.0, 28.0], [16.0, 28.0], [16.0, 38.0], [-1.0, 38.0], [-1.0, 28.0]]] } },
+      { "type": "Feature", "properties": { "provname": "Greece" }, "geometry": { "type": "Polygon", "coordinates": [[[19.0, 34.0], [28.0, 34.0], [28.0, 43.0], [19.0, 43.0], [19.0, 34.0]]] } },
+      { "type": "Feature", "properties": { "provname": "Asia" }, "geometry": { "type": "Polygon", "coordinates": [[[26.0, 35.0], [38.0, 35.0], [38.0, 42.0], [26.0, 42.0], [26.0, 35.0]]] } },
+      { "type": "Feature", "properties": { "provname": "Aegyptus" }, "geometry": { "type": "Polygon", "coordinates": [[[28.0, 29.0], [35.0, 29.0], [35.0, 32.0], [28.0, 32.0], [28.0, 29.0]]] } }
+    ]
   };
 
   onMount(async () => {
@@ -62,58 +62,77 @@
     }).addTo(map);
     
     try {
-      // WE FETCH BOTH FILES HERE
-      const [outlineResponse, provincesResponse] = await Promise.all([
-        // 1. YOUR LINK (The Outline)
-        fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/refs/heads/master/roman_empire_bc_60_extent.geojson'),
-        // 2. MY LINK (The Shapes to color)
-        fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/master/roman_provinces_senate_ad_69.geojson')
-      ]);
-
+      // Fetch the Detailed Outline
+      const outlineResponse = await fetch('https://raw.githubusercontent.com/sfsheath/roman-maps/refs/heads/master/roman_empire_bc_60_extent.geojson');
       const empireOutline = await outlineResponse.json();
-      const highResProvinces = await provincesResponse.json();
 
-      // Layer 1: The Black Outline (Non-interactive)
+      // Draw the black outline
       L.geoJSON(empireOutline, { 
         style: { color: '#000', weight: 2.5, fill: false, interactive: false } 
       }).addTo(map);
+
+      // --- 3. THE "SNAGGING" ALGORITHM ---
+      // We calculate the intersection of our Rough Shapes + Detailed Outline
+      const snaggedProvinces = calculateSnagging(roughProvinces, empireOutline);
       
-      // Layer 2: The Colored Provinces (Interactive)
-      provinceLayer = L.geoJSON(highResProvinces, { style: getStyle }).addTo(map);
+      // Draw the RESULT of the calculation
+      provinceLayer = L.geoJSON(snaggedProvinces, { style: getStyle }).addTo(map);
 
     } catch (error) {
       console.error("Failed to fetch map data:", error);
-      alert("Error loading map data. Check console.");
     }
   });
 
+  // --- THE ALGORITHM FUNCTION ---
+  function calculateSnagging(roughData, detailedData) {
+    let snaggedFeatures = [];
+
+    // Loop through every Rough Province (Square)
+    roughData.features.forEach(roughFeature => {
+      
+      // Loop through every piece of the Detailed Empire (Islands, Mainland)
+      detailedData.features.forEach(detailedFeature => {
+        
+        // TURF.JS MAGIC: 
+        // "Find the area that exists inside BOTH the Rough Square AND the Detailed Map"
+        const intersection = turf.intersect(
+          turf.feature(roughFeature.geometry), 
+          turf.feature(detailedFeature.geometry)
+        );
+
+        // If they touch, we get a result!
+        if (intersection) {
+          // Copy the name (e.g., "Gaul") to the new detailed shape
+          intersection.properties = roughFeature.properties;
+          snaggedFeatures.push(intersection);
+        }
+      });
+    });
+
+    return { type: "FeatureCollection", features: snaggedFeatures };
+  }
+
   function getStyle(feature) {
-    const officialName = feature.properties.provname;
-    const simpleName = provinceNameMapper[officialName];
-    
-    // Logic: Look up the owner. If not found, use "Neutral".
+    const simpleName = feature.properties.provname;
     const owner = currentData ? (currentData.factions[simpleName] || "Neutral") : "Neutral";
 
     return {
       fillColor: colors[owner],
-      weight: 1,       // Thinner lines for the shapes
-      color: 'white',  // White borders between provinces
+      weight: 1,       
+      color: 'white',  
       fillOpacity: 0.6
     };
   }
 
-  // Update styles when the slider moves
   $: if (provinceLayer && currentData) {
     provinceLayer.setStyle(getStyle);
   }
 
-  // FIX FOR THE "2048" DATE BUG
   function formatDate(dateString) {
       if (!dateString) return "";
-      // Manually parse "-0048-01" to avoid Browser timezone bugs
-      const parts = dateString.split('-'); // ["", "0048", "01"]
-      const year = parseInt(parts[1]);     // 48
-      const monthNum = parseInt(parts[2]); // 1
+      const parts = dateString.split('-'); 
+      const year = parseInt(parts[1]);     
+      const monthNum = parseInt(parts[2]); 
       
       const dateObj = new Date();
       dateObj.setMonth(monthNum - 1);
@@ -128,9 +147,7 @@
     <div id="map-container"></div>
     <div class="ui-panel">
       <h1>CAESAR'S CIVIL WAR</h1>
-      <!-- Use the new Date formatter -->
       <div class="date-display">{formatDate(currentData.date)}</div>
-      
       <h2>{currentData.title}</h2>
       <p>{currentData.key_events}</p>
       
