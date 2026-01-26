@@ -109,3 +109,12 @@ Without altering the "Snagging" logic, the coordinates in the roughProvinces obj
 - **Africa:** Define a polygon covering the North African coast (modern Tunisia/Libya coast).
 
 *Refining these coordinates will immediately improve the visual accuracy of the resulting clipped map.*
+
+### 7.3 Required Context for Developer Handoff
+
+To effectively assist with the **Priority Task (7.2)**, any developer **must be provided with the full contents of the following files** for complete context:
+
+1. src/App.svelte: This file contains the main application component, including the current roughProvinces object and the turf.intersect logic.
+2. src/historical-data.js: This file contains the event-driven timeline data, which is necessary to understand the overall state management and faction names.
+
+*Providing these files will ensure that any proposed code changes are compatible with the existing project structure.*
