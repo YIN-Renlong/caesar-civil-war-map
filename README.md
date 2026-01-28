@@ -9,7 +9,7 @@
 **Author:** YIN Renlong  
 **Department:** Faculty of Engineering Science, KU Leuven  
 **Context:** Digital Humanities Demonstrator  
-**Primary Source:** Westall, R. W. (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Brill.
+**Primary Source:** Westall, R. (2017). *Caesar's Civil War: Historical Reality and Fabrication*. Brill.
 
 **Live demo:** https://yin-renlong.github.io/caesar-civil-war-map/
 
